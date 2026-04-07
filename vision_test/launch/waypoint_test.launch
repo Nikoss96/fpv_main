@@ -1,0 +1,27 @@
+<!--
+  waypoint_test.launch
+  Отправляет одну точку в позиционный контроль (без автоматической миссии).
+  Используется для ручной проверки реакции симулятора на setpoint.
+
+  Параметры:
+    x, y, z — координаты целевой точки (по умолчанию 5 0 2)
+
+  Project 2176 — МИЭМ НИУ ВШЭ
+-->
+<launch>
+
+  <arg name="x" default="5.0"/>
+  <arg name="y" default="0.0"/>
+  <arg name="z" default="2.0"/>
+
+  <node pkg="vision_test"
+        type="waypoint_publisher.py"
+        name="waypoint_publisher"
+        output="screen">
+    <param name="x" value="$(arg x)"/>
+    <param name="y" value="$(arg y)"/>
+    <param name="z" value="$(arg z)"/>
+    <param name="rate" value="20"/>
+  </node>
+
+</launch>

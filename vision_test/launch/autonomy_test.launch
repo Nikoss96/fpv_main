@@ -1,0 +1,30 @@
+<!-- 
+  autonomy_test.launch
+  Запускает симулятор (corridor_navigation_test) + тест автономного полёта.
+  
+  Project 2176 — МИЭМ НИУ ВШЭ
+-->
+<launch>
+
+  <!-- ================================================================
+       Симулятор: corridor_navigation_test (динамические препятствия)
+       Можно переключить на _static вариант убрав первую строку и
+       раскомментировав вторую.
+  ================================================================ -->
+  <include file="$(find uav_simulator)/launch/start.launch">
+    <!-- мир по умолчанию уже задан в start.launch; можно переопределить: -->
+    <!-- <arg name="world_name"
+         value="$(find uav_simulator)/worlds/corridor/corridor_navigation_test_static.world"/> -->
+  </include>
+
+  <!-- ================================================================
+       Тест автономного полёта — запускается с задержкой 5 с,
+       чтобы Gazebo и плагин квадрокоптера успели полностью стартовать.
+  ================================================================ -->
+  <node pkg="vision_test"
+        type="autonomy_test.py"
+        name="autonomy_test"
+        output="screen"
+        launch-prefix="bash -c 'sleep 5; $0 $@'" />
+
+</launch>
