@@ -1,12 +1,12 @@
-The repository is meant for leveraging system development and robot deployment for autonomous aerial navigation. Integrating Gazebo and AirSim simulators and containing autonomous navigation modules such as collision avoidance, waypoint following, and manual flight, users can develop autonomous navigation systems and later on port those systems onto real flying robots for deployment.
+# Sensor-based Autonomous Navigation for Unmanned Aerial Vehicles
 
-[A video showing functionalities of the repository available](https://youtu.be/YrtLbCC49kg).
+This repository provides a development environment for autonomous aerial navigation. It integrates Gazebo and AirSim simulators and includes modules for collision avoidance, waypoint following, and manual flight, enabling development and testing of autonomous navigation systems before deployment on real aerial platforms.
+
+**Project 2176** — МИЭМ НИУ ВШЭ / Исследовательский стенд моделирования и автономной навигации БПЛА.
 
 <p align="center"><img src="img/header.jpg" alt="Header" width="70%"/></p>
 
-The repository has been tested on our [1.8kg drone](https://youtu.be/k6jKkpmj4-k) and [10kg drone](https://youtu.be/VYtQt2NcY0Q), flying at high speeds in cluttered environments completely unknown *a priori*. Unlike many of the existing aerial systems relying on visual fiducials for detecting narrow passages and/or external motion tracking systems for acquiring state estimation, our systems use onboard range sensor data alone to compute free space and guide the vehicle through the free space safely, with all processing onboard. This repository is meant to be used for developing aerial navigation systems for real-world applications, e.g. survey, patrol, scout, and delivery, and supports our internal development of [aerial exploration](https://youtu.be/ZYNUSVqeeac).
-
-The repository is optimized for lightweight processing. Our 1.8kg drone is equipped with a single Raspberry PI 4 computer with a 1.8GHz ARM processor. The repository consumes only ~20% of a single core on the computer, with a planning time <0.1ms. The repository is adaptable to aerial vehicles that can carry very limited computational resources to demonstrate fast responses in collision avoidance.
+The system uses onboard range sensor data alone to compute free space and guide the vehicle through it safely, with all processing onboard. It is optimized for lightweight processing, consuming only ~20% of a single core on a Raspberry Pi 4, with a planning time under 0.1 ms. The system is adaptable to aerial vehicles with limited computational resources to demonstrate fast responses in collision avoidance.
 
 ## Prerequisite
 
@@ -22,12 +22,12 @@ The repository has been tested in Ubuntu 18.04 with [ROS Melodic](http://wiki.ro
 
 Clone the open-source repository.
 
-```git clone https://github.com/caochao39/aerial_navigation_development_environment.git```
+```git clone <repository_url>```
 
 In a terminal, go to the folder and compile.
 
 
-```cd aerial_navigation_development_environment```
+```cd sensor_navigation```
 
 ```catkin_make```
 
@@ -160,20 +160,8 @@ Execute *smart-joystick flight*. Make the vehicle fly straight and tune 'lookAhe
 
 ## License
 
-The repository is released with a non-commercial license of Carnegie Mellon University. For commercial use, please contact the [National Robotics Engineering Center (NREC)](https://www.nrec.ri.cmu.edu/) of Carnegie Mellon University.
-
-## Authors
-
-[Chao Cao](http://caochao.me) (CMU Robotics Institute), [Fan Yang](https://github.com/MichaelFYang) (CMU Robotics Institute), [Sam Shum](https://github.com/supercrazysam) (CMU NREC), [Hongbiao Zhu](http://www.hongbiaoz.com) (CMU Robotics Institute), and [Ji Zhang](https://frc.ri.cmu.edu/~zhangji) (CMU NREC & Robotics Institute)
-
-## Reference
-
-J. Zhang, C. Hu, R. Gupta Chadha, and S. Singh. Falco: Fast Likelihood-based Collision Avoidance with Extension to Human-guided Navigation. Journal of Field Robotics. vol. 37, no. 8, pp. 1300–1313, 2020. [[**PDF**](https://frc.ri.cmu.edu/~zhangji/publications/JFR_2020.pdf)]
+MIT License. Copyright (c) 2026 МИЭМ НИУ ВШЭ / Проект 2176.
 
 ## Credits
 
-Gazebo environment modes are from [3DGEMS](https://data.nvision2.eecs.yorku.ca/3DGEMS/). [joystick_drivers](http://wiki.ros.org/joystick_drivers) package is from open-source release.
-
-## Links
-
-[airOMPL Planner](https://github.com/MichaelFYang/airOMPL_planner): an OMPL-based route planner for aerial navigation, running on top of Aerial Navigation Development Environment.
+Gazebo environment models are from [3DGEMS](https://data.nvision2.eecs.yorku.ca/3DGEMS/). [joystick_drivers](http://wiki.ros.org/joystick_drivers) package is from open-source release (BSD license).
