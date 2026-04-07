@@ -1,0 +1,16 @@
+<launch>
+  <!-- Gain for vertical velocity → vertical acceleration P-controller.
+       Increase if drone is sluggish vertically; decrease if it overshoots. -->
+  <arg name="vel_z_gain"    default="2.0"/>
+  <!-- Auto-send takeoff on first /attitude_control message received -->
+  <arg name="auto_takeoff"  default="true"/>
+  <!-- Seconds to hold after takeoff before forwarding flight commands -->
+  <arg name="takeoff_delay" default="0.8"/>
+
+  <node name="attitude_bridge" pkg="attitude_bridge" type="attitude_bridge.py"
+        required="true" output="screen">
+    <param name="vel_z_gain"    value="$(arg vel_z_gain)"/>
+    <param name="auto_takeoff"  value="$(arg auto_takeoff)"/>
+    <param name="takeoff_delay" value="$(arg takeoff_delay)"/>
+  </node>
+</launch>

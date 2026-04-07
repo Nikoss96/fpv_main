@@ -1,0 +1,135 @@
+<launch>
+  <!--
+    start_with_sensor_nav.launch
+    ════════════════════════════
+    Project 2176 — МИЭМ НИУ ВШЭ
+
+    Integrates base_simulator (Gazebo + quadcopterPlugin physics) with
+    sensor_navigation (FALCO local planner + pathFollower).
+    An attitude_bridge node converts pathFollower's roll/pitch/yawRate/velZ
+    commands into the cmd_acc acceleration interface of quadcopterPlugin.
+
+    Topic mapping:
+      /p2176/quadcopter/odom  → /state_estimation  (via arg override)
+      /camera/depth/points    → /rgbd_camera/depth/points (via arg override)
+      /attitude_control       → attitude_bridge → /p2176/quadcopter/cmd_acc
+
+    TF tree:
+      map → base_link   (quadcopterTFBroadcaster, from /p2176/quadcopter/pose)
+      base_link → camera_link (static, setupTF.launch)
+      base_link → vehicle     (static, zero offset — sensor_navigation compat.)
+
+    Usage:
+      roslaunch uav_simulator start_with_sensor_nav.launch
+      roslaunch uav_simulator start_with_sensor_nav.launch autonomy_mode:=true
+      roslaunch uav_simulator start_with_sensor_nav.launch \
+          world_name:=$(rospack find uav_simulator)/worlds/floorplan1/indoor_navigation_case_01_static.world
+  -->
+
+  <!-- ── World selection ──────────────────────────────────────────────── -->
+  <arg name="world_name"    default="$(find uav_simulator)/worlds/corridor/corridor_navigation_test_dynamic.world"/>
+  <arg name="paused"        default="false"/>
+  <arg name="verbose"       default="false"/>
+  <arg name="use_sim_time"  default="true"/>
+  <arg name="debug"         default="false"/>
+
+  <!-- ── Navigation mode ──────────────────────────────────────────────── -->
+  <!-- true  = full autonomy (no joystick needed, flies to waypoints)      -->
+  <!-- false = smart-joystick / manual mode (requires PS3/4/Xbox controller) -->
+  <arg name="autonomy_mode" default="false"/>
+
+  <!-- ── Bridge tuning ────────────────────────────────────────────────── -->
+  <!-- P-gain for vertical velocity → vertical acceleration conversion -->
+  <arg name="vel_z_gain"    default="2.0"/>
+  <!-- Seconds to wait after takeoff before forwarding flight commands -->
+  <arg name="takeoff_delay" default="0.8"/>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       1. Gazebo world
+       ════════════════════════════════════════════════════════════════════ -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused"       value="$(arg paused)"/>
+    <arg name="world_name"   value="$(arg world_name)"/>
+    <arg name="verbose"      value="$(arg verbose)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="debug"        value="$(arg debug)"/>
+  </include>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       2. Spawn quadcopter model
+       ════════════════════════════════════════════════════════════════════ -->
+  <param name="robot_description"
+         command="cat '$(find uav_simulator)/urdf/quadcopter.urdf'"/>
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model"
+        args="-urdf -param robot_description -model quadcopter
+              -x 0.0 -y 0.0 -z 0.1 -Y 0.0"
+        respawn="false"/>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       3. Throttle raw ground-truth topics to 30 Hz
+       ════════════════════════════════════════════════════════════════════ -->
+  <node pkg="topic_tools" type="throttle" name="gt_pose_throttle"
+        args="messages /p2176/quadcopter/pose_raw 30 /p2176/quadcopter/pose"/>
+  <node pkg="topic_tools" type="throttle" name="gt_vel_throttle"
+        args="messages /p2176/quadcopter/vel_raw  30 /p2176/quadcopter/vel"/>
+  <node pkg="topic_tools" type="throttle" name="gt_acc_throttle"
+        args="messages /p2176/quadcopter/acc_raw  30 /p2176/quadcopter/acc"/>
+  <node pkg="topic_tools" type="throttle" name="gt_odom_throttle"
+        args="messages /p2176/quadcopter/odom_raw 30 /p2176/quadcopter/odom"/>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       4. TF: map → base_link  +  base_link → camera_link
+       ════════════════════════════════════════════════════════════════════ -->
+  <include file="$(find uav_simulator)/launch/setupTF.launch">
+    <arg name="pose_topic" value="/p2176/quadcopter/pose"/>
+  </include>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       5. TF: base_link → vehicle  (zero offset)
+          sensor_navigation broadcasts the track_point frame relative to
+          "map", and pathFollower expects a "vehicle" tf child frame.
+       ════════════════════════════════════════════════════════════════════ -->
+  <node pkg="tf" type="static_transform_publisher"
+        name="baselink_to_vehicle"
+        args="0 0 0 0 0 0 base_link vehicle 100"/>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       6. Attitude bridge
+          /attitude_control (TwistStamped, from pathFollower)
+              →  attitude_bridge node
+          /p2176/quadcopter/cmd_acc (PositionTarget, to quadcopterPlugin)
+       ════════════════════════════════════════════════════════════════════ -->
+  <include file="$(find attitude_bridge)/launch/attitude_bridge.launch">
+    <arg name="vel_z_gain"    value="$(arg vel_z_gain)"/>
+    <arg name="takeoff_delay" value="$(arg takeoff_delay)"/>
+  </include>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       7. FALCO local planner + pathFollower (sensor_navigation)
+          Topic remapping via parameter args:
+            stateEstimationTopic  ← /p2176/quadcopter/odom
+            depthCloudTopic       ← /camera/depth/points
+       ════════════════════════════════════════════════════════════════════ -->
+  <include file="$(find local_planner)/launch/local_planner_indoor.launch">
+    <arg name="stateEstimationTopic" value="/p2176/quadcopter/odom"/>
+    <arg name="depthCloudTopic"      value="/camera/depth/points"/>
+    <arg name="autonomyMode"         value="$(arg autonomy_mode)"/>
+  </include>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       8. Keyboard control (optional manual override)
+          Use Tab / arrow keys to send velocity commands directly.
+          The planner's cmd_acc and the keyboard's cmd_vel can coexist:
+          the last received message on each topic wins.
+       ════════════════════════════════════════════════════════════════════ -->
+  <node name="keyboard_control" pkg="uav_simulator" type="keyboard_control"/>
+
+</launch>
